@@ -1,5 +1,9 @@
+import "dart:convert";
+import "dart:io";
+
 import "package:flutter/material.dart";
 import "package:stream/views/DrawerStream.dart";
+import 'package:http/http.dart' as http;
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -9,25 +13,131 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  List<Map<String, dynamic>> itemList = [];
+  List<String> Movies = [];
+
+  List<String> type = [
+    "all",
+    "Action",
+    "Horror",
+    "Carton",
+    "Fantasiy",
+    "Zombie"
+  ];
+  List<String> years = [];
+  List<int> year = [];
+  List<String> Rating = [];
+  List<double> rating = [];
+  List<String> filterByYears = [];
+  List<String> filterByRating = [];
+
+  getTopMovies() async {
+    try {
+      Uri url =
+          Uri.parse("https://imdb-api.com/en/API/Top250Movies/k_u6t92qno");
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var JsonM = json.decode(response.body)['items'];
+        itemList = [];
+        for (dynamic item in JsonM) {
+          Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
+          itemList.add(itemMap);
+        }
+
+        setState(() {
+          for (var i = 0; i < 100; i++) {
+            Movies.add(itemList[i]['image']);
+          }
+          for (var i = 0; i < 100; i++) {
+            if (!years.contains(itemList[i]['year'])) {
+              years.add(itemList[i]['year']);
+            }
+          }
+          year = years.map((str) => int.parse(str)).toList();
+          year.sort((a, b) => b.compareTo(a));
+
+          for (var i = 0; i < 100; i++) {
+            if (!Rating.contains(itemList[i]['imDbRating'])) {
+              Rating.add(itemList[i]['imDbRating']);
+            }
+          }
+          rating = Rating.map((str) => double.parse(str)).toList();
+          print(Rating);
+          rating.sort((a, b) => b.compareTo(a));
+          print(Rating);
+        });
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  getMoviesByRating(String r) async {
+    try {
+      Uri url =
+          Uri.parse("https://imdb-api.com/en/API/Top250Movies/k_u6t92qno");
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var JsonM = json.decode(response.body)['items'];
+        List<Map<String, dynamic>> itemList = [];
+        for (dynamic item in JsonM) {
+          Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
+          itemList.add(itemMap);
+        }
+
+        setState(() {
+          filterByRating = [];
+          for (var i = 0; i < 100; i++) {
+            if (itemList[i]['imDbRating'] == r) {
+              filterByRating.add(itemList[i]['image']);
+            }
+          }
+          print(filterByRating);
+        });
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  getMoviesByYear(String y) async {
+    try {
+      Uri url =
+          Uri.parse("https://imdb-api.com/en/API/Top250Movies/k_u6t92qno");
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var JsonM = json.decode(response.body)['items'];
+        List<Map<String, dynamic>> itemList = [];
+        for (dynamic item in JsonM) {
+          Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
+          itemList.add(itemMap);
+        }
+
+        setState(() {
+          filterByYears = [];
+          for (var i = 0; i < 100; i++) {
+            if (itemList[i]['year'] == y) {
+              filterByYears.add(itemList[i]['image']);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getTopMovies();
+    getMoviesByYear("2019");
+    getMoviesByRating("9.0");
+  }
+
   @override
   Widget build(BuildContext context) {
-    List<String> Movies = [
-      "https://th.bing.com/th/id/OIP.QewGmxQBicPMq076W1DrrgHaJQ?pid=ImgDet&rs=1",
-      "https://th.bing.com/th/id/R.0daf73d3471efc7ae0392b9255773ee9?rik=qGwJaT3N3GkAgg&riu=http%3a%2f%2fwww.movienewz.com%2fwp-content%2fuploads%2f2019%2f03%2favengers-endgame-movie-poster-2.jpg&ehk=4Md9OxRYgoJNzxe%2fk0w9zSF%2fuHcUwaGSRyNdp%2bLIAIc%3d&risl=&pid=ImgRaw&r=0",
-      "https://moviereviewmom.com/wp-content/uploads/2019/03/Captain-Marvel-movie-poster.jpg",
-      "https://vignette4.wikia.nocookie.net/thehundred/images/4/4f/The_100_SDCC_Promo.jpg/revision/latest?cb=20150612151124"
-    ];
-
-    List<String> type = [
-      "all",
-      "Action",
-      "Horror",
-      "Carton",
-      "Fantasiy",
-      "Zombie"
-    ];
-    List<String> years = ["2023", "2022", "2021", "2020", "2019", "2018"];
-
     return Scaffold(
         endDrawer: const DrawerStream(),
         appBar: AppBar(
@@ -85,7 +195,7 @@ class _HomeState extends State<Home> {
                   width: MediaQuery.of(context).size.width,
                   child: const Padding(
                     padding: EdgeInsets.fromLTRB(30, 10, 0, 0),
-                    child: Text("Recent",
+                    child: Text("Top 100",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -140,23 +250,27 @@ class _HomeState extends State<Home> {
                     color: Colors.transparent,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: type.length,
+                      itemCount: rating.length,
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20.0, vertical: 10.0),
-                          child: Container(
-                            height: 10,
-                            width: 100,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20)),
-                            child: Center(
-                              child: Text(
-                                type[index],
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
+                          child: GestureDetector(
+                            onTap: () =>
+                                getMoviesByRating(rating[index].toString()),
+                            child: Container(
+                              height: 10,
+                              width: 100,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20)),
+                              child: Center(
+                                child: Text(
+                                  "${rating[index]}",
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -175,7 +289,7 @@ class _HomeState extends State<Home> {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(30, 0, 20, 20),
                       child: ListView.builder(
-                          itemCount: Movies.length,
+                          itemCount: filterByRating.length,
                           scrollDirection: Axis.horizontal,
                           itemBuilder: (context, index) {
                             return Center(
@@ -192,7 +306,7 @@ class _HomeState extends State<Home> {
                                       borderRadius: BorderRadius.circular(20),
                                       image: DecorationImage(
                                         image: NetworkImage(
-                                          Movies[index],
+                                          filterByRating[index],
                                         ),
                                         fit: BoxFit.fill,
                                       )),
@@ -211,23 +325,28 @@ class _HomeState extends State<Home> {
                     color: Colors.transparent,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: years.length,
+                      itemCount: year.length,
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20.0, vertical: 10.0),
-                          child: Container(
-                            height: 10,
-                            width: 100,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20)),
-                            child: Center(
-                              child: Text(
-                                years[index],
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
+                          child: GestureDetector(
+                            onTap: () {
+                              getMoviesByYear("${year[index]}");
+                            },
+                            child: Container(
+                              height: 10,
+                              width: 100,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20)),
+                              child: Center(
+                                child: Text(
+                                  " ${year[index]}",
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -247,7 +366,7 @@ class _HomeState extends State<Home> {
                       padding: const EdgeInsets.fromLTRB(30, 0, 20, 20),
                       child: Center(
                         child: ListView.builder(
-                            itemCount: Movies.length,
+                            itemCount: filterByYears.length,
                             scrollDirection: Axis.horizontal,
                             itemBuilder: (context, index) {
                               return Center(
@@ -264,7 +383,7 @@ class _HomeState extends State<Home> {
                                         borderRadius: BorderRadius.circular(20),
                                         image: DecorationImage(
                                           image: NetworkImage(
-                                            Movies[index],
+                                            filterByYears[index],
                                           ),
                                           fit: BoxFit.fill,
                                         )),
