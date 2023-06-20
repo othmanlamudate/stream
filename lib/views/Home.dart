@@ -16,6 +16,10 @@ class _HomeState extends State<Home> {
   List<Map<String, dynamic>> itemList = [];
   List<String> Movies = [];
 
+  List<String> IDYear = [];
+  List<String> IDTop = [];
+  List<String> IDRating = [];
+
   List<String> type = [
     "all",
     "Action",
@@ -47,6 +51,7 @@ class _HomeState extends State<Home> {
         setState(() {
           for (var i = 0; i < 100; i++) {
             Movies.add(itemList[i]['image']);
+            IDTop.add(itemList[i]['id']);
           }
           for (var i = 0; i < 100; i++) {
             if (!years.contains(itemList[i]['year'])) {
@@ -90,6 +95,7 @@ class _HomeState extends State<Home> {
           for (var i = 0; i < 100; i++) {
             if (itemList[i]['imDbRating'] == r) {
               filterByRating.add(itemList[i]['image']);
+              IDRating.add(itemList[i]['id']);
             }
           }
           print(filterByRating);
@@ -118,6 +124,7 @@ class _HomeState extends State<Home> {
           for (var i = 0; i < 100; i++) {
             if (itemList[i]['year'] == y) {
               filterByYears.add(itemList[i]['image']);
+              IDYear.add(itemList[i]['id']);
             }
           }
         });
@@ -126,6 +133,29 @@ class _HomeState extends State<Home> {
       print(e);
     }
   }
+
+  /* SearchMovie(String search)async{
+    try {
+      Uri url =
+          Uri.parse("https://imdb-api.com/en/API/Top250Movies/k_u6t92qno");
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var JsonM = json.decode(response.body)['items'];
+        itemList = [];
+        for (dynamic item in JsonM) {
+          Map<String, dynamic> itemMap = Map<String, dynamic>.from(item);
+          itemList.add(itemMap);
+        }
+
+        setState(() {
+          
+        });
+      }
+    } catch (e) {
+      print(e);
+    }
+    
+  } */
 
   @override
   void initState() {
@@ -138,6 +168,7 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    TextEditingController searchController = TextEditingController();
     return Scaffold(
         endDrawer: const DrawerStream(),
         appBar: AppBar(
@@ -172,20 +203,28 @@ class _HomeState extends State<Home> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 15.0),
-                      child: TextField(
-                        style: TextStyle(color: Colors.black),
-                        decoration: InputDecoration(
-                            hintText: "Searsh",
-                            hintStyle: TextStyle(color: Colors.black45),
-                            focusColor: Colors.black,
-                            suffixIcon: Icon(
-                              Icons.search,
-                              color: Colors.black,
-                            ),
-                            border: InputBorder.none,
-                            fillColor: Colors.white),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(15, 5, 0, 0),
+                      child: Center(
+                        child: TextField(
+                          controller: searchController,
+                          style: const TextStyle(color: Colors.black),
+                          decoration: InputDecoration(
+                              hintText: "Searsh",
+                              hintStyle: const TextStyle(color: Colors.black45),
+                              focusColor: Colors.black,
+                              suffixIcon: IconButton(
+                                  onPressed: () {
+                                    print(searchController.text);
+                                  },
+                                  icon: const Icon(
+                                    Icons.search,
+                                    color: Colors.black,
+                                    size: 30,
+                                  )),
+                              border: InputBorder.none,
+                              fillColor: Colors.white),
+                        ),
                       ),
                     ),
                   ),
@@ -227,14 +266,29 @@ class _HomeState extends State<Home> {
                                   width:
                                       MediaQuery.of(context).size.width / 1.7,
                                   decoration: BoxDecoration(
-                                      color: Colors.black45,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                          Movies[index],
-                                        ),
-                                        fit: BoxFit.fill,
-                                      )),
+                                    color: Colors.black45,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Image.network(
+                                      Movies[index],
+                                      fit: BoxFit.fill,
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        }
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      },
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return const Icon(Icons.error);
+                                      },
+                                    ),
+                                  ),
                                 ),
                               ),
                             );
@@ -302,14 +356,32 @@ class _HomeState extends State<Home> {
                                   width:
                                       MediaQuery.of(context).size.width / 3.2,
                                   decoration: BoxDecoration(
-                                      color: Colors.black45,
-                                      borderRadius: BorderRadius.circular(20),
-                                      image: DecorationImage(
-                                        image: NetworkImage(
-                                          filterByRating[index],
-                                        ),
-                                        fit: BoxFit.fill,
-                                      )),
+                                    color: Colors.black45,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(20),
+                                    child: Image.network(
+                                      filterByRating[index],
+                                      fit: BoxFit.fill,
+                                      loadingBuilder: (BuildContext context,
+                                          Widget child,
+                                          ImageChunkEvent? loadingProgress) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        } else {
+                                          return const Center(
+                                              child:
+                                                  CircularProgressIndicator());
+                                        }
+                                      },
+                                      errorBuilder: (BuildContext context,
+                                          Object exception,
+                                          StackTrace? stackTrace) {
+                                        return const Icon(Icons.error);
+                                      },
+                                    ),
+                                  ),
                                 ),
                               ),
                             );
@@ -379,14 +451,37 @@ class _HomeState extends State<Home> {
                                     width:
                                         MediaQuery.of(context).size.width / 3.2,
                                     decoration: BoxDecoration(
-                                        color: Colors.black45,
-                                        borderRadius: BorderRadius.circular(20),
-                                        image: DecorationImage(
-                                          image: NetworkImage(
+                                      color: Colors.black45,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Stack(
+                                      children: [
+                                        Positioned.fill(
+                                          child: Image.network(
                                             filterByYears[index],
+                                            fit: BoxFit.fill,
+                                            loadingBuilder: (context, child,
+                                                loadingProgress) {
+                                              if (loadingProgress == null) {
+                                                return child;
+                                              }
+                                              return const Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                          Color>(Colors.white),
+                                                ),
+                                              );
+                                            },
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return const Icon(Icons.error);
+                                            },
                                           ),
-                                          fit: BoxFit.fill,
-                                        )),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );
